@@ -1,0 +1,158 @@
+---
+title: "Homework 3-3"
+author: Yaseen Bhat
+format:
+  pdf:
+    output-file: "bhat-y-hwk3-3"
+    output-ext:  "pdf"
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+      - \usepackage{hyperref}
+---
+
+[Link to Github](https://github.com/yaseen-bhat/homework3)
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(stringr)
+library(readxl)
+library(data.table)
+library(gdata)
+library(fixest)
+cig.data <- read_rds("/Users/yaseenbhat/Downloads/econ470-hw3/data/output/TaxBurden_Data.rds")
+cig.data <- cig.data %>% 
+  group_by(state) %>% 
+  arrange(state, Year) %>%
+  mutate(
+    tax_change = tax_state - lag(tax_state),
+    tax_change_d = ifelse(tax_change == 0, 0, 1),
+    price_cpi_2022 = cost_per_pack * (cpi_2012 / index),
+    total_tax_cpi_2022 = tax_dollar * (cpi_2012 / index),
+    ln_tax_2012 = log(total_tax_cpi_2022),
+    ln_sales = log(sales_per_capita),
+    ln_price_2012 = log(price_cpi_2022)
+  )
+```
+```{r}
+#| include: false
+#| eval: true
+#| 
+load("/Users/yaseenbhat/Downloads/econ470-hw3/submission 3/hwk3_workspace.Rdata")
+```
+\newpage
+# Summarize The Data
+
+1. Present a bar graph showing the proportion of states with a change in their cigarette tax in each year from 1970 to 1985.<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "The Proportion of States with A Change in Their Cigarette Tax in Each Year from 1970 to 1985"
+print(taxchangeplot)
+
+```
+
+\newpage
+2. Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "The Average Tax (in 2012 dollars) On Cigarettes And The Average Price of A Pack of Cigarettes From 1970 to 2018"
+print(b.1970x2018plot)
+
+
+```
+
+\newpage
+3. Identify the 5 states with the highest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "Average Number of Packs sold per capita for Top 5 States from 1970 to 2018"
+
+print(sales_plot)
+```
+
+\newpage
+4. Identify the 5 states with the lowest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "Average Number of Packs sold per capita for Bottom 5 States from 1970 to 2018"
+
+print(sales_plot_bottom)
+```
+
+\newpage
+ 5. Compare the trends in sales from the 5 states with the highest price increases to those with the lowest price increases.<br>
+
+Both sets of groups showed a decreasing trend of cig sales over time. But the states with the higher price increases led to lesser sales than the ones with the lower increases. i.e. the lower decreases didn't have as steep of a decline. 
+
+\newpage
+# Estimate ATEs
+Now let’s work on estimating a demand curve for cigarettes. Specifically, we’re going to estimate the price elasticity of demand for cigarettes. When explaining your findings, try to limit your discussion just to a couple of sentences.
+
+6. Focusing only on the time period from 1970 to 1990, regress log sales on log prices to estimate the price elasticity of demand over that period. Interpret your results.<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "Number 6"
+print(model_summary)
+
+```
+
+The coefficient is -0.80944, which means as price goes up, sales go down and vice-versa.
+
+\newpage
+7. Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. Interpret your results and compare your estimates to those without an instrument. Are they different? If so, why?
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-cap: "ANumber 7"
+print(feols(ln_sales ~ 1 | ln_price_2012 ~ ln_tax_2012, 
+             data=regdata))
+
+```
+
+The significant negative coefficient for again confirms that higher prices lead to lower sales. It doesn't seem like there's a significant difference with the estimates without the instrument, however it is slightly lower. 
+
+\newpage
+8. Show the first stage and reduced-form results from the instrument.<br>
+
+```{r}
+#q8
+#| echo: false
+#| warning: false
+#| fig-cap: "Number 8"
+print(first_stage_model)
+print(second_stage_model)
+```
+Clearly it has a significant effect on the price, as shown by the first stage, but the coefficients are quite different with/without the fixed effects. 
+
+\newpage
+ 9. Repeat questions 1-3 focusing on the period from 1991 to 2015.<br>
+
+```{r}
+#q9
+#| echo: false
+#| warning: false
+#| fig-cap: "Number 9"
+print(pem_2)
+print(feols(ln_sales ~ 1 | ln_tax_2012, 
+             data= regdata2))
+print(first_stage2)
+print(second_stage2)
+```
+\newpage
+10. Compare your elasticity estimates from 1970-1990 versus those from 1991-2015. Are they different? If so, why?.<br>
+
+For the years 1991-2015, the elasticity estimate of -0.99681 mean there is a stronger reaction of cigarette sales to price changes than in the earlier period of 1970-1990, which had an elasticity estimate of -0.795524. It seems that as time went on, people became more sensitive to the price of cigarettes. This shift could be due to several factors—perhaps there's been a change in how society views smoking, or maybe there are now more alternatives available to smokers.
